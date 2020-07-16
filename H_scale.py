@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 '''
-@Time    : 2020/7/14 10:27
+@Time    : 2020/7/15 14:57
 @Author  : panda
 @Email   ：panda_isat@yeah.net
-@FileName: scale.py.py
+@FileName: H_scale.py.py
 @Software: PyCharm
+ 
 '''
 import numpy as np
 import pandas as pd
@@ -29,68 +30,43 @@ def main():
     spice.furnsh(f_KERNELS + 'lsk\\naif0011.tls.pc')
 
     #####无人机
-    brdf_file='H:\\BRDF\\dunhuang\\2019年试验\\0824-16.13均一性\\16.13均一性.csv'
-    #wb_name='16.13均一性'
-    #df=pd.read_csv(brdf_file,encoding='utf-8-sig').dropna(axis=1)
+    brdf_file='H:\\BRDF\\dunhuang\\2019年试验\\0824-16.43定点不同高度-场外\\16.43定点不同高度-场外.csv'
     df = pd.read_csv(brdf_file, encoding='utf-8-sig')
-    wave_num=200
+    wave_num=800
     point_wave=df.loc[wave_num+5].astype("float")
-    wave= pd.array(df['位置'][5:].astype("float"))
-    time_ymd=df.loc[1][1:]
-    time_hms = df.loc[2][1:]
-    lat =df.loc[3][1:].astype("float")# 纬度
-    lon =df.loc[4][1:].astype("float")# 经度
-    print('UAV_wavelength:',wave[wave_num])
-    UAV_ref=np.array(point_wave[2:-1])
-    print('UAV_ref:', UAV_ref)
-    print('UAV_std:',np.std(UAV_ref,ddof=1))
-    UAV_std = round(np.std(UAV_ref, ddof=1), 3)
-    for i in range(len(time_ymd)):
-        utc=str(time_ymd[i]).replace('/', '-') + 'T' + str(time_hms[i])#2019-8-24T4:25:46未补零
-        #et = spice.spiceypy.utc2et(utc)
-        solar_azimuth, solar_zenith = C_solar_zenith(utc, lat[i], lon[i])#方位角，高度角
-        #print(utc, lat[i], lon[i], solar_azimuth, solar_zenith)#
-    #跑场
-    brdf_file='H:\\BRDF\\dunhuang\\2019年试验\\0824-17.01与地面做对比\\17.01与地面做对比.csv'
-    df = pd.read_csv(brdf_file, encoding='utf-8-sig')
-
-    point_wave=df.loc[wave_num+5].astype("float")
-    wave= pd.array(df['位置'][5:].astype("float"))
-    time_ymd=df.loc[1][1:]
-    time_hms = df.loc[2][1:]
-    lat =df.loc[3][1:].astype("float")# 纬度
-    lon =df.loc[4][1:].astype("float")# 经度
-    print('local_wavelength:',wave[wave_num])
-    local_ref=np.array(point_wave[2:-1])
-    print('local_ref:', local_ref)
-    print('local_std:',np.std(local_ref,ddof=1))
-    local_std=round(np.std(local_ref, ddof=1),3)
-    for i in range(len(time_ymd)):
-        utc=str(time_ymd[i]).replace('/', '-') + 'T' + str(time_hms[i])#2019-8-24T4:25:46未补零
-        #et = spice.spiceypy.utc2et(utc)
-        solar_azimuth, solar_zenith = C_solar_zenith(utc, lat[i], lon[i])#方位角，高度角
-        #print(utc, lat[i], lon[i], solar_azimuth, solar_zenith)#
-    spice.kclear()
-    BB_file='H:\\BRDF\\dunhuang\\2019年试验\\2019年白板数据\\MFB99-359Y-19.csv'#白板数据
-    df = pd.read_csv(BB_file, encoding='utf-8-sig')
-    point_wave = df.loc[15].astype("float")
-    local_point_num=[1,2,3,4,5,6,7,8,9,10,11,12]
-    UAV_point_num = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,13,14,15,16,17,18]
+    wave= pd.array(df['高度'][5:].astype("float"))
+    time_ymd=df.loc[1][2:-1]
+    time_hms = df.loc[2][2:-1]
+    #print(time_ymd,time_hms)
+    lat =df.loc[3][2:-1].astype("float")# 纬度
+    lon =df.loc[4][2:-1].astype("float")# 经度
+    #print('UAV_wavelength:',wave[wave_num])
+    ref=np.array(point_wave[2:-1])
+    print('ref:', len(ref))
+    #height = [10, 10, 20, 20, 30, 30, 50, 50, 100, 100, 150, 150, 200, 200, 250, 250, 250, 250, 200, 200, 150, 150, 100,
+    #          100, 50, 50, 30, 30, 20, 20, 10, 10]
+    height=['10','20','30','50','100','150','200','250','降250','降200','降150','降100','降50','降30','降20','降10']
+    ref=np.array(df.loc[wave_num+5].astype("float")[2:-1])
+    print(wave[wave_num],ref)
+    h_ref=[]
+    for i in range(round(len(ref)/2)):
+        #time_ymd = df.loc[0][i*2]
+        mean_ref=(ref[i*2]+ref[i*2+1])/2
+        h_ref.append(mean_ref)
+        print(i,height[i],mean_ref)
     fig, ax = plt.subplots()
     #print(len(local_point_num), len(ref))
     #line1, = ax.plot(local_point_num, local_ref, 'o', ls='-',label=u'跑场，  其归一化std为:'+str(local_std))
     #line1.set_dashes([2, 2, 10, 2])  # 2pt line, 2pt break, 10pt line, 2pt break
-    line2, = ax.plot(UAV_point_num, UAV_ref, 'o', ls='-', dashes=[6, 2], label=u'无人机,其std为:'+str(UAV_std))
-    ax.set_xlabel("点编号")
+    line2, = ax.plot(height, h_ref, 'o', ls='-', dashes=[6, 2], label=u'外场')
+    ax.set_xlabel("离地高度（m）")
     ax.set_title("场地均一性，波长："+str(wave[wave_num])+'nm')
     ax.set_ylabel("反射率（%）")
-    ax.set_xlim(0, 18)
+
     ax.legend()
     plt.show()
-
-    #print(point_wave)### ax.plot(x, y, 'o', ls='-', ms=4, markevery=case)
+    spice.kclear()
     print('##FINISH###')
-
 def C_solar_zenith(utc, lat, lon):
     # H_S太阳高度角，lat:地理纬度，solar_RA太阳赤纬，t时角,lon经度：94
     TimeZone = 8.
